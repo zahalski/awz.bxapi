@@ -1,0 +1,9 @@
+<?php
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_ID'] = 'Ид';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_NAME'] = 'Название приложения';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_PORTAL'] = 'Портал (ALL если все)';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_APP_ID'] = 'Ид приложения';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_ACTIVE'] = 'Активность';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_PARAMS'] = 'Доп. параметры';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_TOKEN'] = 'Секретка';
+$MESS['AWZ_BXAPI_APPS_ENTITY_FIELD_DATE_ADD'] = 'Дата добавления';

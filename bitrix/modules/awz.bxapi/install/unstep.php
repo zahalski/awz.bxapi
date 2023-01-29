@@ -2,7 +2,7 @@
 	<?=bitrix_sessid_post()?>
     <input type="hidden" name="lang" value="<?=LANG?>">
     <input type="hidden" name="uninstall" value="Y">
-    <input type="hidden" name="id" value="awz.autform">
+    <input type="hidden" name="id" value="awz.bxapi">
     <input type="hidden" name="step" value="2">
     <?CAdminMessage::ShowMessage(GetMessage('MOD_UNINST_WARN'))?>
     <p><?= GetMessage('MOD_UNINST_SAVE')?></p>

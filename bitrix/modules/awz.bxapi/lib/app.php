@@ -262,6 +262,8 @@ class App {
 
         $result = new Result();
 
+        $startTime = microtime(true);
+
         if(strpos($url, 'https://')===false){
             $endpoint = $this->getEndpoint();
             if(!$endpoint || strpos($endpoint, 'https://')===false){
@@ -285,6 +287,9 @@ class App {
             $this->clearCacheParams();
         }
 
+        $tracker = null;
+        $trackerPortal = null;
+
         if(!$res){
             $httpClient = new HttpClient();
             $httpClient->disableSslVerification();
@@ -300,6 +305,20 @@ class App {
                 $res = $httpClient->post($url, $data);
             }
             $this->setLastResponse($httpClient);
+
+            if(\Bitrix\Main\Loader::includeModule('awz.bxapistats')){
+                $tracker = \Awz\BxApiStats\Tracker::getInstance();
+                if($tracker->getAppId() && $tracker->getPortal()){
+                    $trackerPortal = \Awz\BxApiStats\Tracker::getInstance($tracker->getPortal(), $tracker->getAppId());
+                }
+            }
+
+            if($tracker){
+                $tracker->addCount();
+            }
+            if($trackerPortal){
+                $trackerPortal->addCount();
+            }
         }else{
             $this->setLastResponse(null, self::CACHE_TYPE_RESPONSE);
         }
@@ -327,6 +346,15 @@ class App {
                     $result->addError(
                         new Error($json['error_description'])
                     );
+                }
+
+                if(isset($json['time']['duration'])){
+                    if($tracker){
+                        $tracker->addBxTime($json['time']['duration']);
+                    }
+                    if($trackerPortal){
+                        $trackerPortal->addBxTime($json['time']['duration']);
+                    }
                 }
 
             }catch (\Exception  $ex){

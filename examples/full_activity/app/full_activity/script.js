@@ -187,7 +187,7 @@ $(document).ready(function (){
         var type = (bp_code.indexOf('_r') == (bp_code.length-2)) ? 'robot' : 'bp';
 
         $.ajax({
-            url: this.endpointUrl+'getActivity',
+            url: window.awz_helper.endpointUrl+'getActivity',
             data: {signed: signed, code: bp_id, type: type},
             dataType : "json",
             type: "POST",

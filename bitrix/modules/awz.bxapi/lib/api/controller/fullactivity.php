@@ -19,14 +19,20 @@ class FullActivity extends Controller
     const TYPE_ROBOT = 'robot';
     const ACTIVITY_NS = "\\Awz\\BxApi\\Activity\\Types\\";
 
-    public function activityLists(){
-        return array(
-            /*'AwzVipiskaFix',
-            'AwzDocsId',
-            'AwzDealFCmpPrice',
-            'AwzReestrIds',
-            'Telegramm'*/
-        );
+    public function activityLists(string $domain = ''){
+
+        $codes = [
+            'zahalski.bitrix24.by' => [
+                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT],
+            ],
+            'all'=>[]
+        ];
+
+        if($domain === '' || !isset($codes[$domain])){
+            return $codes['all'];
+        }else{
+            return $codes[$domain];
+        }
     }
 
     public function configureActions()
@@ -62,7 +68,12 @@ class FullActivity extends Controller
                 ]
             ],
             'forward'=> [
-                'prefilters' => []
+                'prefilters' => [
+                    new Sign(
+                        ['domain','key','s_id','app_id'], [],
+                        Scope::createFromCode('signed')
+                    )
+                ]
             ]
         ];
 
@@ -80,14 +91,14 @@ class FullActivity extends Controller
         );
     }
 
-    public function forwardAction(string $method){
+    public function forwardAction(string $method, string $domain){
 
         $configMethods = $this->configureActions();
         unset($configMethods['forward']);
         $activeMethods = array_keys($configMethods);
 
         $startMethod = $method;
-        $activityList = $this->activityLists();
+        $activityList = array_keys($this->activityLists($domain));
         if(in_array($method, $activityList)){
             $method = 'activity';
         }
@@ -110,10 +121,18 @@ class FullActivity extends Controller
             return null;
         }
 
+        $activityList = $this->activityLists($domain);
+        if(!isset($activityList[$code])){
+            $this->addError(
+                new Error('Активити с кодом '.$code. 'не найдено', 100)
+            );
+            return null;
+        }
+
         $className = self::ACTIVITY_NS.$code;
         if(!class_exists($className)){
             $this->addError(
-                new Error('Активити '.$code. 'не найдено', 100)
+                new Error('Активити с кодом '.$code. 'не найдено', 100)
             );
             return null;
         }
@@ -127,6 +146,14 @@ class FullActivity extends Controller
     }
 
     public function activityAction(string $domain, string $app_id, string $method, string $type){
+
+        $activityList = $this->activityLists($domain);
+        if(!isset($activityList[$method])){
+            $this->addError(
+                new Error('Активити с кодом '.$method. 'не найдено', 100)
+            );
+            return null;
+        }
 
         $className = self::ACTIVITY_NS.$method;
         if(!class_exists($className)){
@@ -159,10 +186,11 @@ class FullActivity extends Controller
         }
 
         $items = array();
-        $activityList = $this->activityLists();
-        foreach($activityList as $code){
-            $items[] = $this->getMinParams($code, self::TYPE_BP);
-            $items[] = $this->getMinParams($code, self::TYPE_ROBOT);
+        $activityList = $this->activityLists($domain);
+        foreach($activityList as $code=>$types){
+            foreach ($types as $type) {
+                $items[] = $this->getMinParams($code, $type);
+            }
         }
 
         return array(

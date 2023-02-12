@@ -1,0 +1,96 @@
+.slide_side_slider .workarea, .placement_REST_APP_URI .workarea, .placement_CRM_DEAL_DETAIL_TAB .workarea
+{padding: 20px;
+    box-sizing: border-box;}
+
+.center-error-wrap {display:block;width:90%;max-width:600px;margin:auto;
+    text-align:center;}
+.row-form-currency {border-bottom:1px solid #c6cdd3;margin-bottom:20px;padding-bottom:20px;overflow:hidden;}
+.appWrap {position:relative;min-height:400px;}
+.awz-main-preload {display:block;position:absolute;top:0;left:0;width:100%;
+    height:100%;background:#ffffff;opacity:0.85;z-index:1000;opacity:0.6;}
+.awz-main-load {display:block;width:50%;top:50%;margin:auto;
+    margin-top:-20px;color:red;font-size:18px;position:relative;
+    text-align:center;z-index:1001;
+}
+.awz-main-load span {background:red;color:#ffffff;padding:10px 20px;font-size:18px;border-radius:10px;
+    display:inline-block;}
+@media (min-width: 100px){
+    .container {width:100%;max-width:2200px;}
+}
+
+.ui-block-wrapper {
+    background-color: #fff;
+    padding: 0px;
+    margin-bottom: 10px;
+    margin-right: 10px;
+}
+/**/
+.ui-block-title {
+    padding: 12px;
+    border-bottom:1px solid rgba(82, 92, 105, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    background: #f1f5fb;
+    font-weight:bold;
+}
+.ui-block-title-text {
+    font: 18px "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #000;
+}
+
+.ui-block-title-actions-link {
+    color: rgba(128, 134, 142, 0.5);
+    font:13px/17px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    border-bottom:1px dashed;
+}
+/**/
+
+.ui-block-content {
+    display:none;
+}
+.ui-block-content.active {display:block;padding-bottom:20px;}
+
+.ui-block-field-container {
+    margin-bottom: 12px;
+}
+
+.ui-block-field-title {
+    color: rgba(133, 140, 150, 0.7);
+    font: 13px/18px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: block;
+}
+
+.ui-block-field-content {
+    font: 15px/21px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #333;
+}
+
+.ui-block-content-actions {
+    padding:14px 0 11px;
+}
+
+.ui-block-content-actions-link {
+    color: rgba(128, 134, 142, 0.5);
+    font:13px/17px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    border-bottom:1px dashed;
+    margin-right: 12px;
+}
+
+.row-form-currency-th h4 {margin-bottom:0;}
+.row-form-currency-th h4 i.ui-hint {position:relative;top:2px;}
+.row-form-currency-th h4 .ui-hint-icon {
+    width: 18px;
+    height: 18px;
+    margin:0;
+}
+
+.my-inp-calendar-clt {display:block;width:39px;height:39px;position:absolute;right:0;top:0;}
+.my-inp-calendar {position:relative;}
+.my-inp-calendar-clt img {width:100%;height:100%;opacity:0;}
+.placements-settings {padding:35px 0 10px 0;}
+.placements-settings .row {margin-bottom:15px;}
+
+.item-map-row {border-top: 1px solid rgba(82, 92, 105, 0.1);padding:15px 0;}
+.bp-load-hide-btn {display:none;}

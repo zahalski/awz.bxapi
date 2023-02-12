@@ -20,12 +20,12 @@
 ### 1. Устанавливаем модуль awz.admin
 Модуль хелпер для организации списков в админ панели 
 
-[ссылка на модуль] https://github.com/zahalski/awz.admin
+[ссылка на модуль](https://github.com/zahalski/awz.admin)
 
 ### 2. Устанавливаем модуль awz.bxapi
 Модуль хелпер для взаимодействия с Битрикс24
 
-[ссылка на модуль] https://github.com/zahalski/awz.bxapi
+[ссылка на модуль](https://github.com/zahalski/awz.bxapi)
 
 ### 3. Добавляем локальное приложение в Битрикс24
 
@@ -49,7 +49,7 @@
 
 4.3. Загружаем само приложение для Битрикс24, например в папку /bx24/full_activity/
 
-[ссылка на приложение] https://github.com/zahalski/awz.bxapi/tree/main/examples/full_activity/app
+[ссылка на приложение](https://github.com/zahalski/awz.bxapi/tree/main/examples/full_activity/app)
 
 4.4 Можно прокинуть свои роуты для апи (или оставить стандартную точку доступа через модуль main), например
 
@@ -103,7 +103,7 @@ _На стороне апи также сохраняется токен дос�
 |--|----------|
 | Код активити | awz_tg |
 | Класс | Telegramm |
-| Точка доступа api | https://api.zahalski.dev/bitrix/services/main/ajax.php?action=awz:bxapi.api.fullactivity |
+| Точка доступа api | https://api.zahalski.dev/bitrix/services/main/ajax.php?action=awz:bxapi.api.fullactivity.activity&method= |
 
 6.2. создаем файл с именем нашего класса ``telegramm.php`` в папке /bitrix/modules/awz.bxapi/lib/activity/types/
 
@@ -118,17 +118,17 @@ class Telegramm extends ActivityBase {
 
     /* код активити (табличка выше) */
     const CODE = 'awz_tg';
-    
+
     const CL = 'Telegramm';
-    
-    const API_URL = 'https://api.zahalski.dev/bitrix/services/main/ajax.php?action=awz:bxapi.api.fullactivity.';
-    
+
+    const API_URL = 'https://utf8.zahalski.dev/bitrix/services/main/ajax.php?action=awz:bxapi.api.fullactivity.activity&method=';
+
     /* метод должен вернуть код активити в общий контроллер api */
     public static function getCode(string $type): string
     {
         return parent::getCodeFromCode($type, self::CODE);
     }
-    
+
     /* метод должен вернуть название в общий контроллер api
     будет доступно в приложении в списке доступных активити
      */
@@ -139,8 +139,8 @@ class Telegramm extends ActivityBase {
         }
         return 'Активити: Телега';
     }
-    
-    /* метод должен вернуть название в общий контроллер api 
+
+    /* метод должен вернуть название в общий контроллер api
     будет доступно в приложении в списке доступных активити
     */
     public static function getDescription(string $type): string
@@ -150,8 +150,8 @@ class Telegramm extends ActivityBase {
         }
         return 'Активити Телега';
     }
-    
-    /* параметры нашего активити согласно доке битрикса 
+
+    /* параметры нашего активити согласно доке битрикса
     для ifraime приложения в битрикс24 для добавления активити
     */
     public static function getParams(string $type): array
@@ -166,6 +166,12 @@ class Telegramm extends ActivityBase {
                 'Comment'=> [
                     'Name'=>'Текст сообщения в Телеграм',
                     'Type'=>'string',
+                    'Required'=>'Y',
+                    'Multiple'=>'N',
+                ],
+                'TaskId'=> [
+                    'Name'=>'Ид задачи',
+                    'Type'=>'int',
                     'Required'=>'Y',
                     'Multiple'=>'N',
                 ]
@@ -201,25 +207,25 @@ class Telegramm extends ActivityBase {
     public static function run(string $domain, string $app_id, string $type): \Bitrix\Main\Result
     {
         $result = new \Bitrix\Main\Result;
-        
-        /* проверка прав доступа на действие 
+
+        /* проверка прав доступа на действие
         acl строго рекомендуется реализовывать в самой точке доступа
         Awz\bxApi\Api\Controller\FullActivity -> activityLists
         т.к. мы держим в методе секретку с чата, не помешает и тут
         */
-        if($domain != 'tor.bitrix24.by'){
+        if($domain != 'zahalski.bitrix24.by'){
             $result->addError(new \Bitrix\Main\Error("Активити запрещен для ".$domain));
             return $result;
         }
-        
+
         /* возвращаемые в БП параметры */
         $returnParams = [];
-        
+
         $request = Application::getInstance()->getContext()->getRequest();
         $requestData = $request->toArray();
         /* входящие параметры с битрикс24 */
         $params = $requestData['properties'];
-        
+
         /* отправляем сообщение */
         $tokenAr = array(
             'token'=>'123456789:AAGFfAAGFfAAGFfAAGFfAAGFfAAGFfAAGFfAAGFf',
@@ -231,35 +237,35 @@ class Telegramm extends ActivityBase {
         $httpClient->disableSslVerification();
         $r = $httpClient->post($url, array(
             'chat_id'=>$tokenAr['chat_id'],
-            'text'=>$params['Comment']
+            'text'=>$params['Comment']."\n\n".'https://'.$domain.'/company/personal/user/0/tasks/task/view/'.$params['TaskId'].'/',
         ));
         if(!$r){
             $result->addError(new \Bitrix\Main\Error("Чтото пошло не так"));
         }
-        
+
         if(!$result->isSuccess()){
             $returnParams['errorText'] = implode("; ",$result->getErrorMessages());
         }
-        
+
         $app = new \Awz\bxApi\App(array(
             'APP_ID'=>$app_id,
             'APP_SECRET_CODE'=>Helper::getSecret($app_id),
         ));
-        
+
         $retArr = array(
             'event_token'=>$app->getRequest()->get('event_token'),
             'return_values'=>$returnParams
         );
         $app->setAuth($requestData['auth']);
         $resultBp = $app->postMethod('bizproc.event.send', $retArr);
-        
+
         /* чтото пошло не так, возвращаем в общий контроллер ошибку */
         if(!$resultBp->isSuccess()) {
             foreach ($resultBp->getErrors() as $err) {
                 $result->addError($err);
             }
         }
-        
+
         return $result;
     }
     
@@ -275,7 +281,7 @@ class FullActivity extends Controller
 {
     public function activityLists(string $domain = ''){
         $codes = [
-            'tor.bitrix24.by' => [
+            'zahalski.bitrix24.by' => [
                 'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT],
             ],
             'all'=>[] //для всех порталов
@@ -289,3 +295,9 @@ class FullActivity extends Controller
     }
 }
 ```
+
+6.5. Устанавливаем робота в нашем приложении в интерфейсе Битрикс24
+
+6.6. Добавляем робота для задач (пункт Выдумаем кейс для условного портала)
+
+![](https://zahalski.dev/images/modules/keis01/003.png)

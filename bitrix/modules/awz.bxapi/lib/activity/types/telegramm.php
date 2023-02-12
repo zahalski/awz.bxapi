@@ -12,7 +12,7 @@ class Telegramm extends ActivityBase {
 
     const CL = 'Telegramm';
 
-    const API_URL = 'https://utf8.zahalski.dev/bitrix/services/main/ajax.php?action=awz:bxapi.api.fullactivity.';
+    const API_URL = 'https://utf8.zahalski.dev/bitrix/services/main/ajax.php?action=awz:bxapi.api.fullactivity.activity&method=';
 
     /* метод должен вернуть код активити в общий контроллер api */
     public static function getCode(string $type): string
@@ -59,6 +59,12 @@ class Telegramm extends ActivityBase {
                     'Type'=>'string',
                     'Required'=>'Y',
                     'Multiple'=>'N',
+                ],
+                'TaskId'=> [
+                    'Name'=>'Ид задачи',
+                    'Type'=>'int',
+                    'Required'=>'Y',
+                    'Multiple'=>'N',
                 ]
             ],
             'RETURN_PROPERTIES'=> [
@@ -102,7 +108,7 @@ class Telegramm extends ActivityBase {
         $httpClient->disableSslVerification();
         $r = $httpClient->post($url, array(
             'chat_id'=>$tokenAr['chat_id'],
-            'text'=>$params['Comment']
+            'text'=>$params['Comment']."\n\n".'https://'.$domain.'/company/personal/user/0/tasks/task/view/'.$params['TaskId'].'/',
         ));
         if(!$r){
             $result->addError(new \Bitrix\Main\Error("Чтото пошло не так"));

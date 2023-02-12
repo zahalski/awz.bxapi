@@ -521,6 +521,16 @@ class App {
         return $this->log;
     }
 
+    public function getPsrLog(){
+        if($this->log instanceof \Psr\Log\LoggerInterface)
+            return $this->log;
+        return null;
+    }
+
+    public function setPsrLog(\Psr\Log\LoggerInterface $logger){
+        $this->log = $logger;
+    }
+
     public function setLog($params){
         $this->log = new Log($params);
     }
@@ -530,9 +540,9 @@ class App {
         $log = $this->getLog();
 
         if($log instanceof Log){
-
             $log->add($data, $title);
-
+        }elseif($log instanceof \Psr\Log\LoggerInterface){
+            $log->debug('---'.$title."---\n".print_r($data, true));
         }
 
     }

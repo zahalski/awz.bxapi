@@ -265,3 +265,27 @@ class Telegramm extends ActivityBase {
     
 }
 ```
+
+6.4. Конфигурируем доступ в главном контроллере
+
+/bitrix/modules/awz.bxapi/lib/api/controller/fullactivity.php
+
+```php
+class FullActivity extends Controller
+{
+    public function activityLists(string $domain = ''){
+        $codes = [
+            'tor.bitrix24.by' => [
+                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT],
+            ],
+            'all'=>[] //для всех порталов
+        ];
+
+        if($domain === '' || !isset($codes[$domain])){
+            return $codes['all'];
+        }else{
+            return $codes[$domain];
+        }
+    }
+}
+```

@@ -66,10 +66,8 @@ class FullActivity extends Controller
                     )
                 ]
             ],
-            'forward'=> [
-                'prefilters' => [
-                    new AppAuthActivity()
-                ]
+            'forward'=>[
+                'prefilters' => []
             ]
         ];
 
@@ -88,6 +86,26 @@ class FullActivity extends Controller
     }
 
     public function forwardAction(string $method, string $domain=""){
+
+        if(!$domain){
+            $params = [];
+            $signed = $this->getRequest()->get('signed');
+            if($signed){
+                $signer = new Security\Sign\Signer();
+                $params = $signer->unsign($signed);
+                $params = unserialize(base64_decode($params));
+            }
+            if(isset($params['domain'])){
+                $domain = $params['domain'];
+            }
+        }
+        if(!$domain){
+            $auth = $this->getRequest()->get('auth');
+            if($auth && isset($auth['domain'])){
+                $domain = $auth['domain'];
+            }
+        }
+
         if($logger = $this->getLogger()){
             $logger->debug(
                 "[fullactivity.forward]\n{date}\n{args}\n{request}\n",

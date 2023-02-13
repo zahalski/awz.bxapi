@@ -8,8 +8,8 @@ header('Content-Type: text/html; charset=utf-8');
 use Bitrix\Main\Loader;
 if(!Loader::includeModule('awz.bxapi')) return;
 
-use Awz\bxApi\App;
-use Awz\bxApi\Helper;
+use Awz\BxApi\App;
+use Awz\BxApi\Helper;
 use Bitrix\Main\Page\Asset;
 use Bitrix\Main\Web\Json;
 

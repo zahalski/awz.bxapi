@@ -63,7 +63,7 @@
 
 ```php
 // path /local/routes/api.php
-use Awz\bxApi\Api\Controller;
+use Awz\BxApi\Api\Controller;
 $routes->any('/fullactivity/{method}',
     [Controller\FullActivity::class, 'forward']
 )->where('method', '[a-zA-Z]+');
@@ -220,7 +220,7 @@ class Telegramm extends ActivityBase {
 
         /* проверка прав доступа на действие
         acl строго рекомендуется реализовывать в самой точке доступа
-        Awz\bxApi\Api\Controller\FullActivity -> activityLists
+        Awz\BxApi\Api\Controller\FullActivity -> activityLists
         т.к. мы держим в методе секретку с чата, не помешает и тут
         */
         if($domain != 'zahalski.bitrix24.by'){
@@ -257,7 +257,7 @@ class Telegramm extends ActivityBase {
             $returnParams['errorText'] = implode("; ",$result->getErrorMessages());
         }
 
-        $app = new \Awz\bxApi\App(array(
+        $app = new \Awz\BxApi\App(array(
             'APP_ID'=>$app_id,
             'APP_SECRET_CODE'=>Helper::getSecret($app_id),
         ));

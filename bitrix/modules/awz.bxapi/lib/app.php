@@ -8,8 +8,15 @@ use Bitrix\Main\Web\HttpClient;
 use Bitrix\Main\Result;
 use Bitrix\Main\Error;
 use Bitrix\Main\Web\Json;
+use Awz\BxApi\Log as OldLog;
 
-class App {
+use Psr\Log;
+use Bitrix\Main\Diag;
+use Psr\Log\LoggerInterface;
+
+class App implements Log\LoggerAwareInterface {
+
+    use Log\LoggerAwareTrait;
 
     const JSON_REQUEST = 'json';
 
@@ -28,19 +35,27 @@ class App {
 
     protected $request;
 
+    /**
+     * @deprecated
+     */
     private $log;
+
     private $auth;
     private $lastResponse;
     private $lastResponseType;
 
     private array $cacheParams = array();
 
-    public function __construct(array $config){
+    public function __construct(array $config)
+    {
 
         $this->config = $config;
         $this->request = Application::getInstance()->getContext()->getRequest();
 
-        if(isset($config['LOG_FILENAME'], $config['LOG_DIR'])){
+        $logger = $this->getLogger();
+
+        /* @deprecated */
+        if(!$logger && isset($config['LOG_FILENAME'], $config['LOG_DIR'])){
             $this->setLog(array(
                 'FILE_NAME' => $config['LOG_FILENAME'],
                 'FILE_DIR' => $config['LOG_DIR']
@@ -53,7 +68,8 @@ class App {
      * очистка параметров для кеша
      * должна вызываться после любого запроса через кеш
      */
-    public function clearCacheParams(){
+    public function clearCacheParams()
+    {
         $this->cacheParams = array();
     }
 
@@ -63,18 +79,21 @@ class App {
      * @param $cacheId ид кеша
      * @param $ttl время действия в секундах
      */
-    public function setCacheParams($cacheId, $ttl=36000000){
+    public function setCacheParams($cacheId, $ttl=36000000)
+    {
         $this->cacheParams = array(
             'id'=>$cacheId,
             'ttl'=>$ttl
         );
     }
 
-    public function getCacheDir(){
+    public function getCacheDir(): string
+    {
         return self::CACHE_DIR.$this->getConfig('APP_ID').'/';
     }
 
-    public function cleanCache($cacheId=''){
+    public function cleanCache($cacheId='')
+    {
         $obCache = Cache::createInstance();
         if(!$cacheId && $this->cacheParams && isset($this->cacheParams['id'])){
             $cacheId = $this->cacheParams['id'];
@@ -83,7 +102,8 @@ class App {
             $obCache->clean($cacheId, $this->getCacheDir());
     }
 
-    public function getStartToken(){
+    public function getStartToken(): Result
+    {
 
         $result = new Result();
 
@@ -131,31 +151,29 @@ class App {
 
     }
 
-    public function getAuth(){
+    public function getAuth()
+    {
         return $this->auth;
     }
 
-
-    public function getConfig($param=false, $def=false){
-
+    public function getConfig($param=false, $def=false)
+    {
         if(!$param) return $this->config;
-
         return isset($this->config[$param]) ? $this->config[$param] : $def;
-
     }
 
-    public function getRequest(){
-
+    public function getRequest()
+    {
         return $this->request;
-
     }
 
-
-    public function createStateSign($data){
+    public function createStateSign($data)
+    {
         return md5(implode($data).'.'.$this->getConfig('APP_SECRET_CODE'));
     }
 
-    public function createState(){
+    public function createState()
+    {
         $domain = $this->getRequest()->get('DOMAIN');
         $appId = $this->getConfig('APP_ID');
         $secret = $this->getConfig('APP_SECRET_CODE');
@@ -170,7 +188,8 @@ class App {
         }
     }
 
-    public function getAuthUrl(){
+    public function getAuthUrl(): string
+    {
 
         $auth_link = 'https://'.$this->getRequest()->get('DOMAIN').'/oauth/authorize/' .
             '?client_id=' . urlencode($this->getConfig('APP_ID')) .
@@ -180,14 +199,16 @@ class App {
 
     }
 
-    public function getToken(){
+    public function getToken(): string
+    {
         $authData = $this->auth;
         if(isset($authData['access_token']))
             return $authData['access_token'];
         return '';
     }
 
-    public function setAuth($authData){
+    public function setAuth($authData)
+    {
         $this->auth = $authData;
 
         $result = new Result();
@@ -230,23 +251,28 @@ class App {
 
     }
 
-    public function getEndpoint(){
+    public function getEndpoint(): string
+    {
         $authData = $this->auth;
         if(isset($authData['client_endpoint']))
             return $authData['client_endpoint'];
         return '';
     }
 
-    public function getMethod($method, array $params=array()){
+    public function getMethod($method, array $params=array())
+    {
         $result = $this->sendRequest($method, $params, HttpClient::HTTP_GET);
         return $result;
     }
-    public function postMethod($method, $params=array()){
+
+    public function postMethod($method, $params=array())
+    {
         $result = $this->sendRequest($method, $params);
         return $result;
     }
 
-    public function getAppInfo(){
+    public function getAppInfo()
+    {
         $result = $this->sendRequest('app.info.json',array(), HttpClient::HTTP_GET);
         if($result->isSuccess()){
             $data = $result->getData();
@@ -257,8 +283,8 @@ class App {
         return $result;
     }
 
-
-    private function sendRequest($url, $data = array(), $type=HttpClient::HTTP_POST){
+    private function sendRequest($url, $data = array(), $type=HttpClient::HTTP_POST)
+    {
 
         $result = new Result();
 
@@ -376,7 +402,8 @@ class App {
 
     }
 
-    public function setAuthFromRequest(){
+    public function setAuthFromRequest()
+    {
         $tkn = array();
         $tkn['access_token'] = htmlspecialchars($this->getRequest()->get('AUTH_ID'));
         $tkn['client_endpoint'] = 'https://' .htmlspecialchars($this->getRequest()->get('DOMAIN')). '/rest/';
@@ -384,7 +411,8 @@ class App {
         return null;
     }
 
-    public function checkCurrentPortalSignKey(string $domain=""){
+    public function checkCurrentPortalSignKey(string $domain="")
+    {
 
         $result = new Result();
 
@@ -416,7 +444,8 @@ class App {
 
     }
 
-    public function getCurrentPortalOption($optionName, $defValue = null){
+    public function getCurrentPortalOption($optionName, $defValue = null)
+    {
 
         $optionsRes = $this->getCurrentPortalOptions();
         if($optionsRes->isSuccess()){
@@ -427,7 +456,8 @@ class App {
 
     }
 
-    public function getCurrentPortalOptions(){
+    public function getCurrentPortalOptions()
+    {
 
         $result = new Result();
         $this->setAuthFromRequest();
@@ -463,7 +493,8 @@ class App {
 
     }
 
-    public function getCurrentPortalData(string $domain=""){
+    public function getCurrentPortalData(string $domain=""): ?array
+    {
 
         static $portalData = null;
         if(is_array($portalData)) return $portalData;
@@ -492,7 +523,8 @@ class App {
      *
      * @return null|HttpClient
      */
-    public function getLastResponse(){
+    public function getLastResponse(): ?HttpClient
+    {
         return $this->lastResponse;
     }
 
@@ -500,6 +532,20 @@ class App {
         return $this->lastResponseType;
     }
 
+    public function getLogger(): ?LoggerInterface
+    {
+        if ($this->logger === null)
+        {
+            $logger = Diag\Logger::create('awz.bxapi.App', [$this]);
+
+            if ($logger !== null)
+            {
+                $this->setLogger($logger);
+            }
+        }
+
+        return $this->logger;
+    }
 
     /**
      * Запись последнего запроса
@@ -508,7 +554,8 @@ class App {
      * @param string $type
      * @return HttpClient|null
      */
-    private function setLastResponse($resp = null, $type=''){
+    private function setLastResponse($resp = null, $type=''): ?HttpClient
+    {
         if($resp && !($resp instanceof HttpClient)){
             $resp = null;
         }
@@ -517,31 +564,71 @@ class App {
         return $this->lastResponse;
     }
 
-    public function getLog(){
+    /**
+     * @deprecated
+     * use $this->getLogger()
+     * @return mixed
+     */
+    public function getLog()
+    {
         return $this->log;
     }
 
-    public function getPsrLog(){
+    /**
+     * @deprecated
+     * use $this->getLogger()
+     * @return LoggerInterface|null
+     */
+    public function getPsrLog()
+    {
         if($this->log instanceof \Psr\Log\LoggerInterface)
             return $this->log;
         return null;
     }
 
-    public function setPsrLog(\Psr\Log\LoggerInterface $logger){
+    /**
+     * @deprecated
+     * use .settings.php
+     *   'loggers' => [
+     *       'value' => [
+     *           'awz.bxapi.App' => [
+     *               'className' => '\\Bitrix\\Main\\Diag\\FileLogger',
+     *               'constructorParams' => ['/var/www/log.txt'],
+     *               'level' => \Psr\Log\LogLevel::DEBUG
+     *           ]
+     *       ],
+     *       'readonly' => true
+     *   ]
+     * @return LoggerInterface|null
+     */
+    public function setPsrLog(\Psr\Log\LoggerInterface $logger)
+    {
         $this->log = $logger;
     }
 
-    public function setLog($params){
-        $this->log = new Log($params);
+    /**
+     * @deprecated
+     * use .settings.php
+     * @return LoggerInterface|null
+     */
+    public function setLog($params)
+    {
+        $this->log = new OldLog($params);
     }
 
-    public function log($data, $title=''){
+    /**
+     * @deprecated
+     * use $this->getLogger()->debug()
+     * @return LoggerInterface|null
+     */
+    public function log($data, $title='')
+    {
 
         $log = $this->getLog();
 
-        if($log instanceof Log){
+        if($log instanceof OldLog){
             $log->add($data, $title);
-        }elseif($log instanceof \Psr\Log\LoggerInterface){
+        }elseif($log instanceof Log\LoggerInterface){
             $log->debug('---'.$title."---\n".print_r($data, true));
         }
 

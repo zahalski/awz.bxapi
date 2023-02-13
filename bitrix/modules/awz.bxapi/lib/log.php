@@ -1,6 +1,7 @@
 <?
 namespace Awz\BxApi;
 
+/* @deprecated */
 class Log {
 
     public $fileName = null;

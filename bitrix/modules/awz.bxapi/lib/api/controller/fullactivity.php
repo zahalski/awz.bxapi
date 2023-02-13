@@ -7,7 +7,6 @@ use Awz\bxApi\Api\Filters\Sign;
 use Awz\bxApi\Api\Filters\AppAuth;
 use Awz\bxApi\Api\Filters\AppAuthActivity;
 use Bitrix\Main\Error;
-use Bitrix\Main\HttpResponse;
 use Bitrix\Main\Localization\Loc;
 
 Loc::loadMessages(__FILE__);
@@ -23,7 +22,7 @@ class FullActivity extends Controller
 
         $codes = [
             'zahalski.bitrix24.by' => [
-                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT],
+                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT]
             ],
             'all'=>[]
         ];
@@ -31,7 +30,7 @@ class FullActivity extends Controller
         if($domain === '' || !isset($codes[$domain])){
             return $codes['all'];
         }else{
-            return $codes[$domain];
+            return array_merge($codes['all'], $codes[$domain]);
         }
     }
 
@@ -69,10 +68,7 @@ class FullActivity extends Controller
             ],
             'forward'=> [
                 'prefilters' => [
-                    new Sign(
-                        ['domain','key','s_id','app_id'], [],
-                        Scope::createFromCode('signed')
-                    )
+                    new AppAuthActivity()
                 ]
             ]
         ];
@@ -91,8 +87,16 @@ class FullActivity extends Controller
         );
     }
 
-    public function forwardAction(string $method, string $domain){
-
+    public function forwardAction(string $method, string $domain=""){
+        if($logger = $this->getLogger()){
+            $logger->debug(
+                "[fullactivity.forward]\n{date}\n{args}\n{request}\n",
+                [
+                    'args' => func_get_args(),
+                    'request' => $this->getRequest()->toArray()
+                ]
+            );
+        }
         $configMethods = $this->configureActions();
         unset($configMethods['forward']);
         $activeMethods = array_keys($configMethods);
@@ -104,7 +108,7 @@ class FullActivity extends Controller
         }
 
         if(!in_array($method, $activeMethods)){
-            $this->addError(new Error('method not found', 200));
+            $this->addError(new Error("method {$method} not found", 200));
             return array(
                 'enabled'=>array_merge($activeMethods, $activityList)
             );
@@ -114,6 +118,12 @@ class FullActivity extends Controller
     }
 
     public function getActivityAction(string $domain, string $app_id, string $key, string $type, string $code){
+        if($logger = $this->getLogger()){
+            $logger->debug(
+                "[fullactivity.getActivity]\n{date}\n{args}\n",
+                ['args' => func_get_args()]
+            );
+        }
         if(!$domain || !$app_id || !$key || !$code || !$type){
             $this->addError(
                 new Error('Ошибка в параметрах запроса', 100)
@@ -124,7 +134,7 @@ class FullActivity extends Controller
         $activityList = $this->activityLists($domain);
         if(!isset($activityList[$code])){
             $this->addError(
-                new Error('Активити с кодом '.$code. 'не найдено', 100)
+                new Error("Активити с кодом {$code} не найдено", 100)
             );
             return null;
         }
@@ -132,7 +142,7 @@ class FullActivity extends Controller
         $className = self::ACTIVITY_NS.$code;
         if(!class_exists($className)){
             $this->addError(
-                new Error('Активити с кодом '.$code. 'не найдено', 100)
+                new Error("Активити с кодом {$code} не найдено", 100)
             );
             return null;
         }
@@ -146,11 +156,16 @@ class FullActivity extends Controller
     }
 
     public function activityAction(string $domain, string $app_id, string $method, string $type){
-
+        if($logger = $this->getLogger()){
+            $logger->debug(
+                "[fullactivity.activity]\n{date}\n{args}\n",
+                ['args' => func_get_args()]
+            );
+        }
         $activityList = $this->activityLists($domain);
         if(!isset($activityList[$method])){
             $this->addError(
-                new Error('Активити с кодом '.$method. 'не найдено', 100)
+                new Error("Активити с кодом {$method} не найдено", 100)
             );
             return null;
         }
@@ -158,12 +173,12 @@ class FullActivity extends Controller
         $className = self::ACTIVITY_NS.$method;
         if(!class_exists($className)){
             $this->addError(
-                new Error('Активити с кодом '.$method. 'не найдено', 100)
+                new Error("Активити с кодом {$method} не найдено", 100)
             );
             return null;
         }
 
-        $result = $className::run($domain, $app_id, $type);
+        $result = $className::run($domain, $app_id, $type, $this);
         /* @var $result \Bitrix\Main\Result */
 
         if($result->isSuccess()){
@@ -178,6 +193,12 @@ class FullActivity extends Controller
     }
 
     public function listAction(string $domain, string $app_id){
+        if($logger = $this->getLogger()){
+            $logger->debug(
+                "[fullactivity.list]\n{date}\n{args}\n",
+                ['args' => func_get_args()]
+            );
+        }
         if(!$domain || !$app_id){
             $this->addError(
                 new Error('Ошибка в параметрах запроса', 100)

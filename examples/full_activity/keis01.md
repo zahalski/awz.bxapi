@@ -194,7 +194,7 @@ class Telegramm extends ActivityBase {
         return $activityParams;
     }
     
-    public static function run(string $domain, string $app_id, string $type): \Bitrix\Main\Result
+    public static function run(string $domain, string $app_id, string $type, $context=null): \Bitrix\Main\Result
     {
         $result = new \Bitrix\Main\Result;
         return $result;
@@ -214,13 +214,30 @@ use Bitrix\Main\Application;
 
 class Telegramm extends ActivityBase {
 
-    public static function run(string $domain, string $app_id, string $type): \Bitrix\Main\Result
+    public static function run(string $domain, string $app_id, string $type, $context=null): \Bitrix\Main\Result
     {
+        /* @var $context \Awz\BxApi\Api\Scopes\Controller */
+        $log = null;
+        if($context){
+            $log = $context->getLogger();
+        }
+        if($log){
+            $log->debug(
+                "[fullactivity.activity.{code}]\n{date}\n{domain}|{app_id}|{type}\n",
+                [
+                    'domain' => $domain,
+                    'app_id' => $app_id,
+                    'type' => $type,
+                    'code'=> self::CODE
+                ]
+            );
+        }
+
         $result = new \Bitrix\Main\Result;
 
         /* проверка прав доступа на действие
         acl строго рекомендуется реализовывать в самой точке доступа
-        Awz\BxApi\Api\Controller\FullActivity -> activityLists
+        Awz\bxApi\Api\Controller\FullActivity -> activityLists
         т.к. мы держим в методе секретку с чата, не помешает и тут
         */
         if($domain != 'zahalski.bitrix24.by'){
@@ -235,6 +252,13 @@ class Telegramm extends ActivityBase {
         $requestData = $request->toArray();
         /* входящие параметры с битрикс24 */
         $params = $requestData['properties'];
+
+        if($log){
+            $log->debug(
+                "[requestData]\n{date}\n{requestData}\n",
+                ['requestData' => $requestData]
+            );
+        }
 
         /* отправляем сообщение */
         $tokenAr = array(
@@ -257,7 +281,7 @@ class Telegramm extends ActivityBase {
             $returnParams['errorText'] = implode("; ",$result->getErrorMessages());
         }
 
-        $app = new \Awz\BxApi\App(array(
+        $app = new \Awz\bxApi\App(array(
             'APP_ID'=>$app_id,
             'APP_SECRET_CODE'=>Helper::getSecret($app_id),
         ));
@@ -273,6 +297,13 @@ class Telegramm extends ActivityBase {
         if(!$resultBp->isSuccess()) {
             foreach ($resultBp->getErrors() as $err) {
                 $result->addError($err);
+            }
+        }else{
+            if($log){
+                $log->debug(
+                    "[resultBp]\n{date}\n{resultBp}\n",
+                    ['resultBp' => $resultBp->getData()]
+                );
             }
         }
 
@@ -292,15 +323,15 @@ class FullActivity extends Controller
     public function activityLists(string $domain = ''){
         $codes = [
             'zahalski.bitrix24.by' => [
-                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT],
+                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT]
             ],
-            'all'=>[] //для всех порталов
+            'all'=>[]
         ];
 
         if($domain === '' || !isset($codes[$domain])){
             return $codes['all'];
         }else{
-            return $codes[$domain];
+            return array_merge($codes['all'], $codes[$domain]);
         }
     }
 }

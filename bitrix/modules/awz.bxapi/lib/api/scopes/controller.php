@@ -1,5 +1,5 @@
 <?php
-namespace Awz\bxApi\Api\Scopes;
+namespace Awz\BxApi\Api\Scopes;
 
 use Bitrix\Main\ArgumentNullException;
 use Bitrix\Main\Engine\AutoWire\BinderArgumentException;
@@ -7,8 +7,14 @@ use Bitrix\Main\Engine\Controller as BxController;
 use Bitrix\Main\Error;
 use Bitrix\Main\Request;
 
-class Controller extends BxController
+use Bitrix\Main\Response;
+use Psr\Log;
+use Bitrix\Main\Diag;
+
+class Controller extends BxController implements Log\LoggerAwareInterface
 {
+    use Log\LoggerAwareTrait;
+
     public bool $processingError = false;
     public ScopeCollection $scopesCollection;
 
@@ -40,6 +46,15 @@ class Controller extends BxController
             }else{
                 $this->errorCollection[] = new Error($throwable->getMessage(), $throwable->getCode());
             }
+            if($logger = $this->getLogger()){
+                $logger->error(
+                    "[args error]\n{date}\n{code}:{mess}\n",
+                    [
+                        'mess' => $throwable->getMessage(),
+                        'code' => $throwable->getCode()
+                    ]
+                );
+            }
         }
         elseif ($throwable instanceof \Exception)
         {
@@ -51,9 +66,33 @@ class Controller extends BxController
             }else{
                 $this->errorCollection[] = new Error($throwable->getMessage(), $throwable->getCode());
             }
+            if($logger = $this->getLogger()){
+                $logger->error(
+                    "[php error]\n{date}\n{code}:{mess}\n{line}:{file}\n",
+                    [
+                        'mess' => $throwable->getMessage(),
+                        'code' => $throwable->getCode(),
+                        'line' => $throwable->getLine(),
+                        'file' => $throwable->getFile(),
+                    ]
+                );
+                $logger->debug("{trace}\n", ['trace' => $throwable->getTrace()]);
+            }
         }
         elseif ($throwable instanceof \Error)
         {
+            if($logger = $this->getLogger()){
+                $logger->critical(
+                    "[php error]\n{date}\n{code}:{mess}\n{line}:{file}\n",
+                    [
+                        'mess' => $throwable->getMessage(),
+                        'code' => $throwable->getCode(),
+                        'line' => $throwable->getLine(),
+                        'file' => $throwable->getFile(),
+                    ]
+                );
+                $logger->debug("{trace}\n", ['trace' => $throwable->getTrace()]);
+            }
             $this->errorCollection[] = new Error('php error', $throwable->getCode());
         }
     }
@@ -101,4 +140,42 @@ class Controller extends BxController
         return true;
     }
 
+    public function finalizeResponse(Response $response)
+    {
+        if($logger = $this->getLogger()){
+            if(!empty($this->getErrors())){
+                foreach($this->getErrors() as $error){
+                    $logger->error(
+                        "[error]\n{date}\n{code}:{mess}\n",
+                        [
+                            'mess' => $error->getMessage(),
+                            'code' => $error->getCode(),
+                        ]
+                    );
+                }
+            }else{
+                $logger->debug(
+                    "[response]\n{date}\n{resp}\n",
+                    [
+                        'resp' => $response->getContent()
+                    ]
+                );
+            }
+        }
+    }
+
+    public function getLogger()
+    {
+        if ($this->logger === null)
+        {
+            $logger = Diag\Logger::create('awz.bxapi.Controller', [$this]);
+
+            if ($logger !== null)
+            {
+                $this->setLogger($logger);
+            }
+        }
+
+        return $this->logger;
+    }
 }

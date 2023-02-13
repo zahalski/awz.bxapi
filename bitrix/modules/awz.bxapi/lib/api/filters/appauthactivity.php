@@ -53,6 +53,7 @@ class AppAuthActivity extends Base {
             $httpRequest->addFilter(new Request\AppAuthActivity());
         }
 
+
         if(!$key){
             $key = $this->getAction()->getController()->getRequest()->get('key');
         }
@@ -88,6 +89,7 @@ class AppAuthActivity extends Base {
             }
         }
 
+
         if($checkKey !== true){
             $this->addError(new Error(
                 'Ошибка проверки авторизации',
@@ -95,6 +97,7 @@ class AppAuthActivity extends Base {
             ));
             return new EventResult(EventResult::ERROR, null, 'awz.bxapi', $this);
         }
+
 
         return null;
     }

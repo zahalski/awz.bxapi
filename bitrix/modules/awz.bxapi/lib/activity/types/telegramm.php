@@ -71,12 +71,29 @@ class Telegramm extends ActivityBase {
                 'errorText'=>self::getDefParams('errorText')
             ]
         ];
-
+        //\Bitrix\Main\Diag\Debug
         return $activityParams;
     }
 
-    public static function run(string $domain, string $app_id, string $type): \Bitrix\Main\Result
+    public static function run(string $domain, string $app_id, string $type, $context=null): \Bitrix\Main\Result
     {
+        /* @var $context \Awz\BxApi\Api\Scopes\Controller */
+        $log = null;
+        if($context){
+            $log = $context->getLogger();
+        }
+        if($log){
+            $log->debug(
+                "[fullactivity.activity.{code}]\n{date}\n{domain}|{app_id}|{type}\n",
+                [
+                    'domain' => $domain,
+                    'app_id' => $app_id,
+                    'type' => $type,
+                    'code'=> self::CODE
+                ]
+            );
+        }
+
         $result = new \Bitrix\Main\Result;
 
         /* проверка прав доступа на действие
@@ -96,6 +113,13 @@ class Telegramm extends ActivityBase {
         $requestData = $request->toArray();
         /* входящие параметры с битрикс24 */
         $params = $requestData['properties'];
+
+        if($log){
+            $log->debug(
+                "[requestData]\n{date}\n{requestData}\n",
+                ['requestData' => $requestData]
+            );
+        }
 
         /* отправляем сообщение */
         $tokenAr = array(
@@ -134,6 +158,13 @@ class Telegramm extends ActivityBase {
         if(!$resultBp->isSuccess()) {
             foreach ($resultBp->getErrors() as $err) {
                 $result->addError($err);
+            }
+        }else{
+            if($log){
+                $log->debug(
+                    "[resultBp]\n{date}\n{resultBp}\n",
+                    ['resultBp' => $resultBp->getData()]
+                );
             }
         }
 

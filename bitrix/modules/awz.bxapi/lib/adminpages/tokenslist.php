@@ -2,6 +2,7 @@
 
 namespace Awz\BxApi\AdminPages;
 
+use Awz\Admin\Helper;
 use Bitrix\Main\Localization\Loc;
 use Awz\Admin\IList;
 use Awz\Admin\IParams;
@@ -16,6 +17,13 @@ class TokensList extends IList implements IParams {
 
     public function trigerGetRowListAdmin($row){
         $row->AddCheckField("ACTIVE");
+        Helper::editListField($row, 'PORTAL', ['type'=>'string'], $this);
+        Helper::editListField($row, 'APP_ID', ['type'=>'string'], $this);
+        Helper::editListField($row, 'EXPIRED_TOKEN', ['type'=>'datetime'], $this);
+        Helper::editListField($row, 'EXPIRED_REFRESH', ['type'=>'datetime'], $this);
+        $row->AddViewField('PARAMS', '<pre>'.print_r($row->arRes['PARAMS'], true).'</pre>');
+        $row->AddViewField('TOKEN', '<pre>'.print_r($row->arRes['TOKEN'], true).'</pre>');
+
     }
 
     public function trigerInitFilter(){
@@ -38,7 +46,8 @@ class TokensList extends IList implements IParams {
             "BUTTON_CONTEXTS"=>array(),
             "ADD_GROUP_ACTIONS"=>array("edit","delete"),
             "ADD_LIST_ACTIONS"=>array("delete"),
-            "FIND"=>array()
+            "FIND"=>array(),
+            "FIND_FROM_ENTITY"=>['ID'=>[],'PORTAL'=>[],'APP_ID'=>[],'EXPIRED_TOKEN'=>[],'EXPIRED_REFRESH'=>[]]
         );
         return $arParams;
     }

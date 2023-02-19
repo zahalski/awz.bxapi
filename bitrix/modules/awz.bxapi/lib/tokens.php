@@ -42,44 +42,44 @@ class TokensTable extends Entity\DataManager
             new Entity\IntegerField('ID', array(
                     'primary' => true,
                     'autocomplete' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_ID')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_ID')
                 )
             ),
             new Entity\StringField('PORTAL', array(
                     'required' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_PORTAL')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_PORTAL')
                 )
             ),
             new Entity\StringField('APP_ID', array(
                     'required' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_APP_ID')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_APP_ID')
                 )
             ),
             new Entity\StringField('ACTIVE', array(
                     'required' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_ACTIVE')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_ACTIVE')
                 )
             ),
             new Entity\StringField('PARAMS', array(
                     'required' => true,
                     'serialized' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_PARAMS')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_PARAMS')
                 )
             ),
             new Entity\StringField('TOKEN', array(
                     'required' => true,
                     'serialized' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_TOKEN')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_TOKEN')
                 )
             ),
             new Entity\DatetimeField('EXPIRED_TOKEN', array(
                     'required' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_EXPIRED_TOKEN')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_EXPIRED_TOKEN')
                 )
             ),
             new Entity\DatetimeField('EXPIRED_REFRESH', array(
                     'required' => true,
-                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_FIELDS_EXPIRED_REFRESH')
+                    'title'=>Loc::getMessage('AWZ_BXAPI_TOKENS_ENTITY_FIELD_EXPIRED_REFRESH')
                 )
             )
         );

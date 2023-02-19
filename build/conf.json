@@ -1,0 +1,13 @@
+{
+  "git_path": "../",
+  "module_path": "../bitrix/modules/awz.bxapi/",
+  "updates_path": "../update/",
+  "output_path": "../dist/",
+  "readme_file": "../README.md",
+  "lang_prefix": ["AWZ_BXAPI_"],
+  "disabled_lang": [
+    "AWZ_PARTNER_NAME", "AWZ_PARTNER_URI", "ACCESS_DENIED",
+    "MAIN_ADMIN_MENU_DELETE", "MAIN_ADMIN_MENU_EDIT",
+    "MAIN_ADMIN_LIST_SELECTED", "MAIN_ADMIN_LIST_CHECKED"
+  ]
+}

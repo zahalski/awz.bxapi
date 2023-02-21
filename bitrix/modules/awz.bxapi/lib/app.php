@@ -111,9 +111,12 @@ class App implements Log\LoggerAwareInterface {
             $state = $this->getRequest()->get('state');
             if($state){
                 $param = Json::decode(base64_decode($state));
-                if(($param['portal'] && $param['app']) &&
-                    $this->createStateSign(array($param['portal'], $param['app'])) == $param['sign'])
+                if(($param['portal'] && $param['app'] && $param['sign']) &&
+                    $this->createStateSign($param) == $param['sign'])
                 {
+                    if($param['key']){
+                        $this->getRequest()->set('app_key', $param['key']);
+                    }
                     $this->auth = $this->request->toArray();
                     $url = 'https://oauth.bitrix.info/oauth/token/';
                     $prepareData = array(
@@ -169,10 +172,19 @@ class App implements Log\LoggerAwareInterface {
 
     public function createStateSign($data)
     {
+        if(isset($data['sign'])){
+            $newData = [];
+            foreach($data as $k=>$v){
+                if($k !== 'sign'){
+                    $newData[$k] = $v;
+                }
+            }
+            $data = $newData;
+        }
         return md5(implode($data).'.'.$this->getConfig('APP_SECRET_CODE'));
     }
 
-    public function createState()
+    public function createState(string $key="")
     {
         $domain = $this->getRequest()->get('DOMAIN');
         $appId = $this->getConfig('APP_ID');
@@ -183,17 +195,20 @@ class App implements Log\LoggerAwareInterface {
                 'portal'=>$domain,
                 'app'=>$appId,
             );
+            if($key){
+                $stateParams['key'] = $key;
+            }
             $stateParams['sign'] = $this->createStateSign($stateParams);
             return base64_encode(json_encode($stateParams));
         }
     }
 
-    public function getAuthUrl(): string
+    public function getAuthUrl(string $key=""): string
     {
 
         $auth_link = 'https://'.$this->getRequest()->get('DOMAIN').'/oauth/authorize/' .
             '?client_id=' . urlencode($this->getConfig('APP_ID')) .
-            '&state='.$this->createState();
+            '&state='.$this->createState($key);
 
         return $auth_link;
 
@@ -493,11 +508,13 @@ class App implements Log\LoggerAwareInterface {
 
     }
 
-    public function getCurrentPortalData(string $domain=""): ?array
+    public function getCurrentPortalData(string $domain="", string $active = 'Y'): ?array
     {
 
-        static $portalData = null;
-        if(is_array($portalData)) return $portalData;
+        if($active === 'Y'){
+            static $portalData = null;
+            if(is_array($portalData)) return $portalData;
+        }
 
         if(!$domain) $domain = $this->getRequest()->get('DOMAIN');
 
@@ -508,7 +525,7 @@ class App implements Log\LoggerAwareInterface {
             'filter'=>array(
                 '=PORTAL'=>$domain,
                 '=APP_ID'=>$this->getConfig('APP_ID'),
-                '=ACTIVE'=>'Y',
+                '=ACTIVE'=>$active,
             ),
             'limit'=>1
         );

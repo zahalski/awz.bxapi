@@ -9,6 +9,24 @@ use Bitrix\Main\Security;
 class Helper {
 
     /**
+     * constants https://dev.1c-bitrix.ru/rest_help/crm/constants.php
+     *
+     * @return void
+     */
+    public static function entityCodes(){
+        return [
+            ['ID'=>1, 'VALUE'=>'Лид', 'CODE'=>'LEAD', 'MIN_CODE'=>'L'],
+            ['ID'=>2, 'VALUE'=>'Сделка', 'CODE'=>'DEAL', 'MIN_CODE'=>'D'],
+            ['ID'=>3, 'VALUE'=>'Контакт', 'CODE'=>'CONTACT', 'MIN_CODE'=>'C'],
+            ['ID'=>4, 'VALUE'=>'Компания', 'CODE'=>'COMPANY', 'MIN_CODE'=>'CO'],
+            ['ID'=>5, 'VALUE'=>'Счет (старый)', 'CODE'=>'INVOICE', 'MIN_CODE'=>'I'],
+            ['ID'=>7, 'VALUE'=>'Предложение', 'CODE'=>'QUOTE', 'MIN_CODE'=>'Q'],
+            ['ID'=>8, 'VALUE'=>'Реквизит', 'CODE'=>'REQUISITE', 'MIN_CODE'=>'RQ'],
+            ['ID'=>31, 'VALUE'=>'Счет (новый)', 'CODE'=>'SMART_INVOICE', 'MIN_CODE'=>'SI'],
+        ];
+    }
+
+    /**
      * html ошибок по тексту и заголовку
      *
      * @param array $errors массив ошибок

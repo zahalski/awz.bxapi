@@ -42,7 +42,7 @@ class AppAuth extends BaseFilter {
             try {
                 $signer = new Security\Sign\Signer();
                 $params = $signer->unsign($this->getAction()->getController()->getRequest()->get('signed'));
-                $params = unserialize(base64_decode($params));
+                $params = unserialize(base64_decode($params), ['allowed_classes' => false]);
 
                 $domain = $params['domain'];
                 $key = $params['key'];

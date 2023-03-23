@@ -93,7 +93,7 @@ class FullActivity extends Controller
             if($signed){
                 $signer = new Security\Sign\Signer();
                 $params = $signer->unsign($signed);
-                $params = unserialize(base64_decode($params));
+                $params = unserialize(base64_decode($params), ['allowed_classes' => false]);
             }
             if(isset($params['domain'])){
                 $domain = $params['domain'];

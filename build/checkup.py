@@ -22,13 +22,13 @@ last_version_ar = '.'.join([str(int(_)) for _ in sorted_change_log.popitem()[0].
 if len(sorted_change_log) == 0:
     last_version_updated = last_version_ar
 else:
-	last_version_updated = '.'.join([str(int(_)) for _ in sorted_change_log.popitem()[0].split('.')])
+    #last_version_updated = '.'.join([str(int(_)) for _ in sorted_change_log.popitem()[0].split('.')])
+    last_version_updated = last_version_ar
 
 args = sys.argv
 if len(args) > 1:
     last_version_updated = args[1]
 
-files = get_changed(updates_path, last_version_updated)
 last_version = get_module_version(module_path)
 
 # добавление папки с обновлением
@@ -49,6 +49,8 @@ if not os.path.isfile(new_version_desc):
 # сколько папок в пути к модулю
 module_paths = split_path(module_path)
 # копирование измененных файлов
+print("get changed version", last_version_updated)
+files = get_changed(updates_path, last_version_updated)
 for file_updated_path in files:
     # источник
     file_path = os.path.abspath(os.path.join(conf['git_path'], file_updated_path))

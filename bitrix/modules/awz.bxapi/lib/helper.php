@@ -27,6 +27,25 @@ class Helper {
     }
 
     /**
+     * коды для сокращения урла
+     *
+     * @return void
+     */
+    public static function getPlacementCode(string $code, bool $short = true): string
+    {
+        static $shortCodes = [
+            'TASK_USER_LIST_TOOLBAR'=>'1'
+        ];
+        if($short)
+            return $shortCodes[$code] ?? $code;
+        if(isset($shortCodes[$code])) return $code;
+        foreach($shortCodes as $key=>$v){
+            if($v === $code) return $key;
+        }
+        return $code;
+    }
+
+    /**
      * html ошибок по тексту и заголовку
      *
      * @param array $errors массив ошибок
@@ -94,7 +113,7 @@ class Helper {
         try{
             $signer = new Security\Sign\Signer();
             $params = $signer->unsign($request->get('signed'));
-            $params = unserialize(base64_decode($params));
+            $params = unserialize(base64_decode($params), ['allowed_classes' => false]);
         }catch (\Exception $e){
             $result->addError(new Error('Ошибка проверки подписи'));
             return $result;

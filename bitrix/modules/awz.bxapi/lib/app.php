@@ -510,15 +510,15 @@ class App implements Log\LoggerAwareInterface {
 
     public function getCurrentPortalData(string $domain="", string $active = 'Y'): ?array
     {
-
-        if($active === 'Y'){
-            static $portalData = null;
-            if(is_array($portalData)) return $portalData;
-        }
+        static $portalData = [];
 
         if(!$domain) $domain = $this->getRequest()->get('DOMAIN');
-
         if(!$domain) return null;
+
+        if($active === 'Y'){
+            if(isset($portalData[$domain]) && is_array($portalData[$domain]))
+                return $portalData[$domain];
+        }
 
         $query = array(
             'select'=>array('*'),
@@ -529,8 +529,12 @@ class App implements Log\LoggerAwareInterface {
             ),
             'limit'=>1
         );
-        $portalData = TokensTable::getList($query)->fetch();
-        if($portalData) return $portalData;
+        $curData = TokensTable::getList($query)->fetch();
+        if($active === 'Y' && $curData){
+            $portalData[$domain] = $curData;
+        }
+        if($curData) return $curData;
+
         return null;
 
     }

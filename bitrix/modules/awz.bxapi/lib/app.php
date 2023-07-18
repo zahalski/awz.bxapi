@@ -9,6 +9,7 @@ use Bitrix\Main\Result;
 use Bitrix\Main\Error;
 use Bitrix\Main\Web\Json;
 use Awz\BxApi\Log as OldLog;
+use Awz\BxApi\Api\Filters\Request\SetFilter;
 
 use Psr\Log;
 use Bitrix\Main\Diag;
@@ -115,7 +116,8 @@ class App implements Log\LoggerAwareInterface {
                     $this->createStateSign($param) == $param['sign'])
                 {
                     if($param['key']){
-                        $this->getRequest()->set('app_key', $param['key']);
+                        //$this->getRequest()->set('app_key', $param['key']);
+                        $this->getRequest()->addFilter(new SetFilter('app_key', $param['key']));
                     }
                     $this->auth = $this->request->toArray();
                     $url = 'https://oauth.bitrix.info/oauth/token/';

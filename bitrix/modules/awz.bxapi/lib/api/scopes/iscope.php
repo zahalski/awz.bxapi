@@ -1,5 +1,5 @@
 <?php
-namespace Awz\bxApi\Api\Scopes;
+namespace Awz\BxApi\Api\Scopes;
 
 interface IScope
 {

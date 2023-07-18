@@ -1,6 +1,6 @@
 <?php
 
-namespace Awz\bxApi\Api\Filters;
+namespace Awz\BxApi\Api\Filters;
 
 use Awz\BxApi\TokensTable;
 use Bitrix\Main\Engine\Controller;

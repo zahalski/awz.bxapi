@@ -1,5 +1,5 @@
 <?php
-namespace Awz\bxApi\Api\Filters\Request;
+namespace Awz\BxApi\Api\Filters\Request;
 
 use Bitrix\Main\Type;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Awz\bxApi\Api\Filters;
+namespace Awz\BxApi\Api\Filters;
 
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Security;

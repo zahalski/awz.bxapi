@@ -3,7 +3,7 @@ return array(
     'controllers' => array(
         'value' => array(
             'namespaces' => array(
-                '\\Awz\\bxApi\\Api\\Controller' => 'api'
+                '\\Awz\\BxApi\\Api\\Controller' => 'api'
             )
         ),
         'readonly' => true

@@ -1,9 +1,9 @@
 <?php
 
-namespace Awz\bxApi\Api\Filters;
+namespace Awz\BxApi\Api\Filters;
 
-use Awz\bxApi\Api\Scopes\BaseFilter;
-use Awz\bxApi\Api\Scopes\Scope;
+use Awz\BxApi\Api\Scopes\BaseFilter;
+use Awz\BxApi\Api\Scopes\Scope;
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Security;
 use Bitrix\Main\Error;

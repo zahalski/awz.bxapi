@@ -1,11 +1,11 @@
 <?php
-namespace Awz\bxApi\Api\Controller;
+namespace Awz\BxApi\Api\Controller;
 
-use Awz\bxApi\Api\Scopes\Controller;
-use Awz\bxApi\Api\Scopes\Scope;
-use Awz\bxApi\Api\Filters\Sign;
-use Awz\bxApi\Api\Filters\AppAuth;
-use Awz\bxApi\Api\Filters\AppAuthActivity;
+use Awz\BxApi\Api\Scopes\Controller;
+use Awz\BxApi\Api\Scopes\Scope;
+use Awz\BxApi\Api\Filters\Sign;
+use Awz\BxApi\Api\Filters\AppAuth;
+use Awz\BxApi\Api\Filters\AppAuthActivity;
 use Bitrix\Main\Error;
 use Bitrix\Main\Localization\Loc;
 

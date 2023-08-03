@@ -30,11 +30,11 @@ class Scope implements \JsonSerializable
         $this->customData = $customData;
     }
 
-    public static function createFromCode(string $code): array
+    public static function createFromCode(string $code, $customData = null): array
     {
         return [
-            new Scope($code, Scope::STATUS_OK),
-            new Scope($code, Scope::STATUS_ERR)
+            new Scope($code, Scope::STATUS_OK, $customData),
+            new Scope($code, Scope::STATUS_ERR, $customData)
         ];
     }
 

@@ -35,6 +35,8 @@ class HandlersTable extends Entity\DataManager
         unique IX_HASH (HASH),
         ) AUTO_INCREMENT=1;
         */
+        //params longtext
+        //ALTER TABLE `b_awz_bxapi_handlers` MODIFY `PARAMS` longtext
     }
 
     public static function getMap()

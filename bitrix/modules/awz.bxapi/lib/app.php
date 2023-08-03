@@ -171,6 +171,10 @@ class App implements Log\LoggerAwareInterface {
     {
         return $this->request;
     }
+    public function setRequest($request)
+    {
+        $this->request = $request;
+    }
 
     public function createStateSign($data)
     {

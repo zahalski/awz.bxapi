@@ -11,11 +11,11 @@ ver_key_str = '.'.join(ver_list)
 change_log[ver_key_str] = []
 change_log[ver_key_str].append('## История версий')
 
-if not ("readme_file" in conf):
+if not ("changelog_file" in conf):
     raise Exception("README.MD file not found in conf.json")
 
 updates_path = os.path.abspath(conf["updates_path"])
-readme_file = os.path.abspath(conf["readme_file"])
+changelog_file = os.path.abspath(conf["changelog_file"])
 for name in os.listdir(updates_path):
     if name[-5:] == '.json':
         continue
@@ -42,7 +42,7 @@ sorted_change_log = dict(sorted(change_log.items(), reverse = True))
 
 all_rows = []
 find_cl = False
-with open(readme_file, 'r', encoding='utf-8') as fr:
+with open(changelog_file, 'r', encoding='utf-8') as fr:
     for line in fr:
         if not find_cl:
             all_rows.append(line)
@@ -58,6 +58,6 @@ with open(readme_file, 'r', encoding='utf-8') as fr:
                 all_rows.append(line)
                 find_cl = False
 
-with open(readme_file, 'w', encoding='utf-8') as fr:
+with open(changelog_file, 'w', encoding='utf-8') as fr:
     for wr in all_rows:
         fr.write(wr)

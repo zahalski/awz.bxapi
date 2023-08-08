@@ -47,6 +47,8 @@ class App implements Log\LoggerAwareInterface {
 
     private array $cacheParams = array();
 
+    private static $batchResults = [];
+
     public function __construct(array $config)
     {
 
@@ -82,15 +84,24 @@ class App implements Log\LoggerAwareInterface {
      */
     public function setCacheParams($cacheId, $ttl=36000000)
     {
+        if(is_array($cacheId)){
+            $cacheId = md5(serialize($cacheId));
+        }
         $this->cacheParams = array(
             'id'=>$cacheId,
             'ttl'=>$ttl
         );
     }
 
+    public function getCacheDirAuth(): string
+    {
+        $addFolder = md5(serialize([$this->getConfig(),$this->getAuth()]));
+        return $addFolder;
+    }
+
     public function getCacheDir(): string
     {
-        return self::CACHE_DIR.$this->getConfig('APP_ID').'/';
+        return self::CACHE_DIR.$this->getConfig('APP_ID').'/'.$this->getCacheDirAuth().'/';
     }
 
     public function cleanCache($cacheId='')
@@ -304,6 +315,65 @@ class App implements Log\LoggerAwareInterface {
         return $result;
     }
 
+    public function getBatchCached(string $cmd, string $key=''){
+        if(!$key) $key = $cmd;
+        $cacheKey = md5(serialize([$key, $cmd, $this->getAuth()]));
+        if(isset(self::$batchResults[$cacheKey])) {
+            if($logger = $this->getLogger()){
+                $logger->debug("[ok_batch_cache] - {date}\n{cmd}\n{cacheKey}\n", [
+                    'cmd' => $cmd,
+                    'cacheKey' => $cacheKey
+                ]);
+            }
+            return self::$batchResults[$cacheKey];
+        }
+        if($logger = $this->getLogger()){
+            $logger->debug("[no_batch_cache] - {date}\n{cmd}\n{cacheKey}\n{trace}\n", [
+                'cmd' => $cmd,
+                'cacheKey' => $cacheKey,
+                'trace' => debug_backtrace(),
+            ]);
+        }
+        return $this->getMethod($cmd);
+    }
+
+    public function prepareBatchCached(array $batch){
+
+        $callBach = [];
+        foreach($batch as $key=>$cmd) {
+            $cacheKey = md5(serialize([$key, $cmd, $this->getAuth()]));
+            if(!isset(self::$batchResults[$cacheKey])){
+                $callBach[$key] = $cmd;
+            }
+        }
+        if(empty($callBach)) return;
+
+        $batchResult = $this->postMethod('batch', ['halt'=>0,'cmd'=>$callBach]);
+
+        if($batchResult->isSuccess()){
+            $batchResultData = $batchResult->getData();
+            foreach($batch as $key=>$cmd){
+                $cacheKey = md5(serialize([$key, $cmd, $this->getAuth()]));
+                $res = new Result();
+                $res->setData(
+                    ['result'=>['result'=>$batchResultData['result']['result']['result'][$key]]]
+                );
+                self::$batchResults[$cacheKey] = $res;
+                if($logger = $this->getLogger()){
+                    $logger->debug("[set_batch_cache] - {date}\n{cmd}\n{cacheKey}\n{trace}\n", [
+                        'cmd' => $cmd,
+                        'cacheKey' => $cacheKey,
+                        'trace' => debug_backtrace(),
+                    ]);
+                }
+            }
+        }
+    }
+
+    public function clearBatchCached(){
+        self::$batchResults = [];
+    }
+
     private function sendRequest($url, $data = array(), $type=HttpClient::HTTP_POST)
     {
 
@@ -326,10 +396,21 @@ class App implements Log\LoggerAwareInterface {
         }
         //print_r($data);
 
+        $startCacheId = '';
         if(!empty($this->cacheParams)){
+            $startCacheId = $this->cacheParams['id'];
             $obCache = Cache::createInstance();
             if( $obCache->initCache($this->cacheParams['ttl'],$this->cacheParams['id'],$this->getCacheDir()) ){
                 $res = $obCache->getVars();
+            }
+            if($res){
+                if($logger = $this->getLogger()){
+                    $logger->debug("[from_cache] - {date}\n{page}\n{url}\n{data}\n", [
+                        'page' => $startCacheId,
+                        'url'=>$url,
+                        'data'=>$data
+                    ]);
+                }
             }
             $this->clearCacheParams();
         }
@@ -360,11 +441,11 @@ class App implements Log\LoggerAwareInterface {
                 }
             }
 
-            if($tracker){
-                $tracker->addCount();
-            }
             if($trackerPortal){
                 $trackerPortal->addCount();
+            }
+            if($tracker){
+                $tracker->addCount();
             }
         }else{
             $this->setLastResponse(null, self::CACHE_TYPE_RESPONSE);
@@ -415,6 +496,15 @@ class App implements Log\LoggerAwareInterface {
             if($obCache){
                 if($obCache->startDataCache()){
                     $obCache->endDataCache($res);
+
+                    if($logger = $this->getLogger()){
+                        $logger->debug("[add_cache] - {date}\n{page}\n{url}\n{data}\n", [
+                            'page' => $startCacheId,
+                            'url'=>$url,
+                            'data'=>$data
+                        ]);
+                    }
+
                 }
             }
         }
@@ -490,7 +580,8 @@ class App implements Log\LoggerAwareInterface {
             return $result;
         }
 
-        $resOptions = $this->getMethod('app.option.get', array('option'=>array()));
+        //$resOptions = $this->getMethod('app.option.get');
+        $resOptions = $this->getBatchCached('app.option.get');
 
         if($resOptions->isSuccess()){
 

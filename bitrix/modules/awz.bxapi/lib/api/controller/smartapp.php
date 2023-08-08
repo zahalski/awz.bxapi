@@ -391,12 +391,22 @@ class SmartApp extends Controller
                 if(isset($data['PARAMS']['hook']['desc_icon']) && $data['PARAMS']['hook']['desc_icon']){
                     $item['IMAGE'] = $data['PARAMS']['hook']['desc_icon'];
                 }
+                if(isset($data['PARAMS']['hook']['mlink']) && $data['PARAMS']['hook']['mlink']){
+                    $item['MLINK'] = $data['PARAMS']['hook']['mlink'];
+                }
+                $item['MENU'] = 'Y';
+                if(isset($data['PARAMS']['hook']['main_menu']) && $data['PARAMS']['hook']['main_menu']){
+                    $item['MENU'] = $data['PARAMS']['hook']['main_menu']!='N' ? 'Y' : 'N';
+                }
+                if($parentplacement){
+                    $item['MENU'] = 'Y';
+                }
                 if(isset($data['PARAMS']['hook']['desc_bg_hex']) && $data['PARAMS']['hook']['desc_bg_hex']){
                     $item['BG'] = $data['PARAMS']['hook']['desc_bg_hex'];
                 }else{
                     $item['BG'] = 'transparent';
                 }
-                $newItem['SORT'] = 500;
+                $item['SORT'] = 500;
                 $hooks[$data['ID']] = $item;
             }
 
@@ -424,6 +434,10 @@ class SmartApp extends Controller
                         if(!$newItem['BG']) $newItem['BG'] = 'transparent';
                         if(!$newItem['IMAGE']) $newItem['IMAGE'] = '/bitrix/js/ui/forms/images/crm-deal.svg';
                         if(!$newItem['NAME']) $newItem['NAME'] = $hooks[$pageId]['NAME'];
+                        if($hooks[$pageId]['MLINK']){
+                            $newItem['MLINK'] = $hooks[$pageId]['MLINK'];
+                        }
+                        $newItem['MENU'] = ($hooks[$pageId]['MENU'] != 'N') ? 'Y' : 'N';
                         $newItem['SORT'] = $pageOption['sort'];
                         $hooks[$pageId] = $newItem;
                     }else{
@@ -627,6 +641,12 @@ class SmartApp extends Controller
                 }
                 if(isset($params['desc_bg_hex'])){
                     $data['PARAMS']['hook']['desc_bg_hex'] = $this->validateHex($params['desc_bg_hex']);
+                }
+                if(isset($params['mlink'])){
+                    $data['PARAMS']['hook']['mlink'] = $this->lenFix($params['mlink'],256);
+                }
+                if(isset($params['main_menu'])){
+                    $data['PARAMS']['hook']['main_menu'] = ($params['main_menu']!='N') ? 'Y' : 'N';
                 }
 
                 if($this->getErrors()){

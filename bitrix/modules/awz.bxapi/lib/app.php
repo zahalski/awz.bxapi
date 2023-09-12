@@ -315,6 +315,42 @@ class App implements Log\LoggerAwareInterface {
         return $result;
     }
 
+    public function callBatch(array $batchAr = [], array $cacheIds = [], string $external=''){
+        $result = new Result();
+        $finalData = [];
+        $batchList = [];
+        $index = 0;
+        foreach($batchAr as $key=>$row){
+            if(!isset($batchList[$index])) $batchList[$index] = [];
+            if(count($batchList[$index])==50) $index++;
+            $batchList[$index][$key] = $row['method'].'?'.http_build_query($row['params']);
+        }
+        foreach($batchList as $k=>$resp){
+            if($k) sleep(1);
+            if(!empty($cacheIds) && isset($cacheIds[$k])){
+                $this->setCacheParams($cacheIds[$k]);
+            }else{
+                $this->clearCacheParams();
+            }
+            $res = $this->postMethod($external.'batch', [
+                'halt' => 0,
+                'cmd'=> $resp
+            ]);
+            if($res->isSuccess()){
+                $resData = $res->getData();
+                if(isset($resData['result']['result']['result']) && !empty($resData['result']['result']['result'])){
+                    foreach($resData['result']['result']['result'] as $kB=>$vB){
+                        $finalData[$kB] = $vB;
+                    }
+                }
+            }else{
+                $result->addErrors($res->getErrors());
+            }
+        }
+        $result->setData(['result'=>$finalData]);
+        return $result;
+    }
+
     public function getBatchCached(string $cmd, string $key=''){
         if(!$key) $key = $cmd;
         $cacheKey = md5(serialize([$key, $cmd, $this->getAuth()]));

@@ -13,6 +13,7 @@ class ParseHook implements Type\IRequestFilter
 
     public function filter(array $values)
     {
+        //if(isset($values['get']['HASH']))
         if(isset($values['get']['ID']) && isset($values['get']['TOKEN'])){
             $r = HandlersTable::getRowById($values['get']['ID']);
             if($r && ($r['HASH'] === $values['get']['TOKEN'])){
@@ -35,6 +36,8 @@ class ParseHook implements Type\IRequestFilter
                 }
             }
         }
+        //file_put_contents($_SERVER['DOCUMENT_ROOT'].'/test.txt', print_r([$values['get'], $values['post'], $r], true)."\n", FILE_APPEND);
+
         return $values;
     }
 }

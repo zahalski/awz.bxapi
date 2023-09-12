@@ -22,6 +22,7 @@ use Bitrix\Main\Request;
 use Bitrix\Main\Result;
 use Bitrix\Main\Type\DateTime;
 use Awz\Admin\Grid\Option as GridOptions;
+use Bitrix\Main\Web\Json;
 
 Loc::loadMessages(__FILE__);
 
@@ -38,7 +39,7 @@ class SmartApp extends Controller
         $result = new Result();
         $check = false;
         $r = \Awz\BxApi\HandlersTable::getList([
-            'select'=>['ID','PARAMS'],
+            'select'=>['ID','PARAMS','URL'],
             'filter'=>[
                 '=ID'=>$id,
                 '=PORTAL'=>$portal
@@ -52,6 +53,12 @@ class SmartApp extends Controller
             }else{
                 $check = true;
             }
+
+            $urlParamAr = explode("&ext=", $data['URL']);
+            if(count($urlParamAr)==2){
+                $data['PARAMS']['hook']['ext'] = $urlParamAr[1];
+            }
+
             if($check) $result->setData($data['PARAMS']);
             break;
         }
@@ -507,6 +514,22 @@ class SmartApp extends Controller
         return $hex;
     }
 
+    public function validateJson($json){
+        if(!$json) return '';
+        try{
+            $r = Json::decode($json);
+            if(empty($r)) {
+                $json = '';
+            }
+        }catch (\Exception $e){
+            $json = '';
+            $this->addError(
+                new Error($e->getMessage(), 100)
+            );
+        }
+        return $json;
+    }
+
     public function updategridAction(string $grid_id, string $key, array $params){
 
         if(!Loader::includeModule('awz.admin')){
@@ -647,6 +670,9 @@ class SmartApp extends Controller
                 }
                 if(isset($params['main_menu'])){
                     $data['PARAMS']['hook']['main_menu'] = ($params['main_menu']!='N') ? 'Y' : 'N';
+                }
+                if(isset($params['grid_filter'])){
+                    $data['PARAMS']['hook']['grid_filter'] = $this->validateJson($params['grid_filter']);
                 }
 
                 if($this->getErrors()){

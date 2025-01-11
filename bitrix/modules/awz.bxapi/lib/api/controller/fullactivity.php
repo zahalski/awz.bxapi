@@ -8,6 +8,7 @@ use Awz\BxApi\Api\Filters\AppAuth;
 use Awz\BxApi\Api\Filters\AppAuthActivity;
 use Bitrix\Main\Error;
 use Bitrix\Main\Localization\Loc;
+use Bitrix\Main\Security;
 
 Loc::loadMessages(__FILE__);
 
@@ -22,9 +23,9 @@ class FullActivity extends Controller
 
         $codes = [
             'zahalski.bitrix24.by' => [
-                'Telegramm'=>[self::TYPE_BP, self::TYPE_ROBOT]
             ],
-            'all'=>[]
+            'all'=>[
+            ]
         ];
 
         if($domain === '' || !isset($codes[$domain])){

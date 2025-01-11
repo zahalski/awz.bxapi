@@ -3,6 +3,8 @@ namespace Awz\BxApi\Api\Controller;
 
 use Awz\BxApi\App;
 use Awz\BxApi\Helper;
+use Awz\BxApi\OptionsTable;
+use Awz\BxApi\TokensTable;
 use Bitrix\Main\ArgumentNullException;
 use Bitrix\Main\Config\Configuration;
 use Bitrix\Main\Engine\ActionFilter\Base;
@@ -10,6 +12,7 @@ use Bitrix\Main\Engine\AutoWire\BinderArgumentException;
 use Awz\BxApi\Api\Scopes\Controller;
 use Awz\BxApi\Api\Scopes\Scope;
 use Awz\BxApi\Api\Filters\AppAuth;
+use Awz\BxApi\Api\Filters\PublicScope;
 use Awz\BxApi\Api\Filters\AppUser;
 use Awz\BxApi\Api\Filters\IsAdmin;
 use Awz\BxApi\Api\Filters\Sign;
@@ -28,11 +31,25 @@ Loc::loadMessages(__FILE__);
 
 class SmartApp extends Controller
 {
+    private static $appActionEnabled = [];
 
     public function __construct(Request $request = null)
     {
         Loader::includeModule('awz.admin');
         parent::__construct($request);
+    }
+
+    public function enableAction($action){
+        self::$appActionEnabled[$action] = true;
+    }
+    public function disableAction($action){
+        self::$appActionEnabled[$action] = false;
+    }
+    public function isActiveAction($action){
+        if(isset(self::$appActionEnabled[$action])){
+            return self::$appActionEnabled[$action];
+        }
+        return false;
     }
 
     public static function checkUserRightHook($portal, $app, $id, $userId){
@@ -70,6 +87,9 @@ class SmartApp extends Controller
 
     public function configureActions()
     {
+        /* AppAuth - в actions можно использовать string $domain, string $app
+         * безопасно с такими названиями переменных
+        */
         $config = [
             'addhook'=>[
                 'prefilters' => [
@@ -113,7 +133,99 @@ class SmartApp extends Controller
                     )
                 ]
             ],
+            'listhookapp'=>[
+                'prefilters' => [
+                    new PublicScope(
+                        [], [],
+                        Scope::createFromCode('public')
+                    ),
+                ]
+            ],
             'deletehook'=>[
+                'prefilters' => [
+                    new AppAuth(
+                        [], [],
+                        Scope::createFromCode('user')
+                    ),
+                    new AppUser(
+                        [], [],
+                        Scope::createFromCode(
+                            'bxuser',
+                            new \Bitrix\Main\Type\Dictionary(['userId'=>0])
+                        ),
+                        ['user']
+                    ),
+                    new IsAdmin(
+                        [], [],
+                        Scope::createFromCode('bxadmin'),
+                        ['user', 'bxuser']
+                    )
+                ]
+            ],
+            'deletecache'=>[
+                'prefilters' => [
+                    new AppAuth(
+                        [], [],
+                        Scope::createFromCode('user')
+                    ),
+                    new AppUser(
+                        [], [],
+                        Scope::createFromCode(
+                            'bxuser',
+                            new \Bitrix\Main\Type\Dictionary(['userId'=>0])
+                        ),
+                        ['user']
+                    ),
+                    new IsAdmin(
+                        [], [],
+                        Scope::createFromCode('bxadmin'),
+                        ['user', 'bxuser']
+                    )
+                ]
+            ],
+            'userfields'=>[
+                'prefilters' => [
+                    new AppAuth(
+                        [], [],
+                        Scope::createFromCode('user')
+                    ),
+                    new AppUser(
+                        [], [],
+                        Scope::createFromCode(
+                            'bxuser',
+                            new \Bitrix\Main\Type\Dictionary(['userId'=>0])
+                        ),
+                        ['user']
+                    ),
+                    new IsAdmin(
+                        [], [],
+                        Scope::createFromCode('bxadmin'),
+                        ['user', 'bxuser']
+                    )
+                ]
+            ],
+            'setfieldparam'=>[
+                'prefilters' => [
+                    new AppAuth(
+                        [], [],
+                        Scope::createFromCode('user')
+                    ),
+                    new AppUser(
+                        [], [],
+                        Scope::createFromCode(
+                            'bxuser',
+                            new \Bitrix\Main\Type\Dictionary(['userId'=>0])
+                        ),
+                        ['user']
+                    ),
+                    new IsAdmin(
+                        [], [],
+                        Scope::createFromCode('bxadmin'),
+                        ['user', 'bxuser']
+                    )
+                ]
+            ],
+            'clearfieldscache'=>[
                 'prefilters' => [
                     new AppAuth(
                         [], [],
@@ -317,6 +429,206 @@ class SmartApp extends Controller
         return $item;
     }
 
+    public function setfieldparamAction(string $domain, string $app, string $id, string $module, string $name, string $hooks, array $extra = []){
+        if(!$this->checkRequire(['user', 'bxuser', 'bxadmin'])){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+
+        if(!$domain || !$app){
+            $this->addError(
+                new Error('Ошибка в параметрах запроса', 100)
+            );
+            return null;
+        }
+        $fieldsNew = [
+            'APP'=>$app,
+            'PORTAL'=>$domain,
+            'PARAMS'=>[
+                'id'=>$id,
+                'module'=>$module,
+                'name'=>$name,
+                'hooks'=>$hooks,
+                'extra'=>$extra
+            ],
+            'NAME'=>md5(serialize([$id,$module,$name])),
+            'DATE_ADD'=>DateTime::createFromTimestamp(time()),
+        ];
+        $fieldsLink = $fieldsNew;
+        $fieldsLink['NAME'] = md5(serialize([$module,$name]));
+        foreach([$fieldsNew, $fieldsLink] as $fields){
+            $res = OptionsTable::getList([
+                'select'=>['ID'],
+                'filter'=>[
+                    'APP'=>$fields['APP'],
+                    'PORTAL'=>$fields['PORTAL'],
+                    'NAME'=>$fields['NAME']
+                ],
+                'limit'=>1
+            ])->fetch();
+            if($res){
+                OptionsTable::update($res, $fields);
+            }else{
+                OptionsTable::add($fields);
+            }
+        }
+
+    }
+
+    public function clearfieldscacheAction(string $domain, string $app){
+        if(!$this->checkRequire(['user', 'bxuser', 'bxadmin'])){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+
+        if(!$domain || !$app){
+            $this->addError(
+                new Error('Ошибка в параметрах запроса', 100)
+            );
+            return null;
+        }
+        $tokenData = TokensTable::getList(array(
+            'select'=>array('*'),
+            'filter'=>array('=PORTAL'=>$domain, '=APP_ID'=>$app),
+            'limit'=>1
+        ))->fetch();
+
+        if(!$tokenData){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+
+        $appOb = new App(array(
+            'APP_ID'=>$app,
+            'APP_SECRET_CODE'=>Helper::getSecret($app)
+        ));
+        $resultAuth = $appOb->setAuth($tokenData['TOKEN']);
+        if($resultAuth->isSuccess()) {
+            $cacheId = md5(serialize([$domain, $app, 'userfields']));
+            $appOb->cleanCache($cacheId);
+            for ($i = 0; $i < 20; $i++) {
+                $appOb->cleanCache($cacheId . '_' . $i);
+            }
+        }else{
+            $this->addErrors($resultAuth->getErrors());
+        }
+    }
+    public function userfieldsAction(string $domain, string $app){
+        if(!$this->checkRequire(['user', 'bxuser', 'bxadmin'])){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+
+        if(!$domain || !$app){
+            $this->addError(
+                new Error('Ошибка в параметрах запроса', 100)
+            );
+            return null;
+        }
+
+        $tokenData = TokensTable::getList(array(
+            'select'=>array('*'),
+            'filter'=>array('=PORTAL'=>$domain, '=APP_ID'=>$app),
+            'limit'=>1
+        ))->fetch();
+
+        if(!$tokenData){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+
+        $appOb = new App(array(
+            'APP_ID'=>$app,
+            'APP_SECRET_CODE'=>Helper::getSecret($app)
+        ));
+        $resultAuth = $appOb->setAuth($tokenData['TOKEN']);
+        if($resultAuth->isSuccess()){
+            $cacheId = md5(serialize([$domain, $app, 'userfields']));
+            //'userfield_type':{'method':'userfieldtype.list'},
+
+            $appOb->setCacheParams($cacheId);
+            $method = 'userfieldconfig.getTypes';
+            $bxTypes = $appOb->postMethod($method, ['moduleId'=>'crm']);
+            $awzFieldId = '';
+            if(!$bxTypes->isSuccess()){
+                $this->addErrors($bxTypes->getErrors());
+                return null;
+                //$bxFields =
+            }else{
+                $bxTypesData = $bxTypes->getData();
+                foreach($bxTypesData['result']['result']['types'] as $k=>$v){
+                    if(mb_strpos($k,'_awzuientity')!==false){
+                        $awzFieldId = $k;
+                        break;
+                    }
+                }
+            }
+            //return $bxTypes->getData();
+
+            $batchAr = [];
+            /*$batchAr['uf_smart'] = [
+                'method'=>'crm.type.list',
+                'params'=>['order'=>['id'=>'DESC']]
+            ];*/
+            $batchAr['uf_crm'] = [
+                'method'=>'userfieldconfig.list',
+                'params'=>[
+                    'moduleId'=>'crm',
+                    'select'=>['*','language'=>'ru'],
+                    'filter'=>['userTypeId'=>$awzFieldId],
+                    'order'=>['id'=>'DESC']
+                ]
+            ];
+            $batchAr['uf_rpa'] = [
+                'method'=>'userfieldconfig.list',
+                'params'=>[
+                    'moduleId'=>'rpa',
+                    'select'=>['*','language'=>'ru'],
+                    'filter'=>['userTypeId'=>$awzFieldId],
+                    'order'=>['id'=>'DESC']
+                ]
+            ];
+            //'rpa_type':{'method':'rpa.type.list', 'params':{}},
+            $batchAr['rpa_types'] = [
+                'method'=>'rpa.type.list',
+                'params'=>['order'=>['id'=>'ASC']]
+            ];
+            $batchAr['crm_types'] = [
+                'method'=>'crm.type.list',
+                'params'=>['order'=>['id'=>'ASC']]
+            ];
+
+            $cacheNums = ceil(count($batchAr)/50);
+            $cacheIds = [];
+            $cacheKey = 1;
+
+            while($cacheNums > 0){
+                $cacheNums = $cacheNums-1;
+                $cacheKey++;
+                $cacheIds[] = $cacheId.'_'.$cacheKey;
+            }
+
+            $batchRes = $appOb->callBatch($batchAr, $cacheIds);
+            if($batchRes->isSuccess()){
+                $batchResDataPrepare = $batchRes->getData();
+                $batchResDataPrepare = $batchResDataPrepare['result'];
+                return $batchResDataPrepare;
+            }
+
+        }else{
+            $this->addErrors($resultAuth->getErrors());
+        }
+    }
     public function listhookAction(string $domain, string $app, int $publicmode=0, int $parentplacement = 0, string $grid_id='', string $key='', int $check_active=0){
         if(!$this->checkRequire(['user', 'bxuser'])){
             $this->addError(
@@ -328,6 +640,19 @@ class SmartApp extends Controller
         $userId = $this->getScopeCollection()->getByCode('bxuser')->getCustomData()->get('userId');
         $isAdmin = $this->getScopeCollection()->getByCode('bxadmin')->isEnabled();
 
+        $this->enableAction('listhookapp');
+        $result = $this->listhookappAction($domain, $app, $userId, $isAdmin, $publicmode, $parentplacement, $grid_id, $key, $check_active);
+        $this->disableAction('listhookapp');
+        return $result;
+    }
+
+    public function listhookappAction(string $domain, string $app, int $userId, $isAdmin, int $publicmode=0, int $parentplacement = 0, string $grid_id='', string $key='', int $check_active=0){
+        if(!$this->isActiveAction('listhookapp')){
+            $this->addError(
+                new Error('Действие запрещено', 100)
+            );
+            return null;
+        }
         if(!$domain || !$app || !$userId){
             $this->addError(
                 new Error('Ошибка в параметрах запроса', 100)
@@ -381,7 +706,7 @@ class SmartApp extends Controller
                 if(!isset($data['PARAMS']['handler']['app'])) continue;
                 if($data['PARAMS']['handler']['app'] != $app) continue;
                 if(isset($data['PARAMS']['hook']['users']) && !empty($data['PARAMS']['hook']['users']) &&
-                is_array($data['PARAMS']['hook']['users']) && !in_array($userId, $data['PARAMS']['hook']['users'])){
+                    is_array($data['PARAMS']['hook']['users']) && !in_array($userId, $data['PARAMS']['hook']['users'])){
                     continue;
                 }
                 $item = [
@@ -747,6 +1072,45 @@ class SmartApp extends Controller
         }
     }
 
+    public function deletecacheAction(string $domain, string $app, string $cache_key = ""){
+        if(!$this->checkRequire(['user', 'bxuser', 'bxadmin'])){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+
+        if(!$domain || !$app){
+            $this->addError(
+                new Error('Ошибка в параметрах запроса', 100)
+            );
+            return null;
+        }
+        $tokenData = TokensTable::getList(array(
+            'select'=>array('*'),
+            'filter'=>array('=PORTAL'=>$domain, '=APP_ID'=>$app),
+            'limit'=>1
+        ))->fetch();
+        if(!$tokenData){
+            $this->addError(
+                new Error('Авторизация не найдена', 105)
+            );
+            return null;
+        }
+        $appOb = new App(array(
+            'APP_ID'=>$app,
+            'APP_SECRET_CODE'=>Helper::getSecret($app)
+        ));
+        $resultAuth = $appOb->setAuth($tokenData['TOKEN']);
+        if($resultAuth->isSuccess()){
+            if($cache_key === 'options'){
+                require_once(Application::getDocumentRoot().'/bx24/smarts/include/options_const.php');
+                if(class_exists('AwzSmartEntities')){
+                    \AwzSmartEntities::getPortalParametersClean($appOb);
+                }
+            }
+        }
+    }
     public function deletehookAction(int $id, string $hash, string $domain, string $app){
         if(!$this->checkRequire(['user', 'bxuser', 'bxadmin'])){
             $this->addError(
